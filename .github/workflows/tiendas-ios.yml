@@ -94,12 +94,14 @@ jobs:
       - name: Perfil técnico (servidor remoto.vexlyapp.com)
         run: cp canela/custom-tecnico.txt flutter/assets/canela_custom.txt
 
-      - name: Nombre "Vexly Remoto" y declaración de cifrado
+      - name: Nombre "Vexly Remoto" (el cifrado se declara en App Store Connect)
         run: |
           P=flutter/ios/Runner/Info.plist
           plutil -replace CFBundleDisplayName -string "Vexly Remoto" "$P"
           plutil -replace CFBundleName -string "Vexly Remoto" "$P"
-          plutil -replace ITSAppUsesNonExemptEncryption -bool YES "$P"
+          # La app trae cifrado propio (libsodium/rustls/openssl): el "false" de RustDesk no aplica,
+          # y "true" exige un código de documentación. Sin la clave, Apple pregunta en App Store Connect.
+          plutil -remove ITSAppUsesNonExemptEncryption "$P"
 
       - name: Compilar Flutter (sin firmar)
         run: |
