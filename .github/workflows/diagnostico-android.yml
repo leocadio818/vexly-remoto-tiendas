@@ -1,0 +1,32 @@
+# Comprueba en 1 minuto que los secretos de Android abren la llave. No compila nada.
+# No muestra la llave ni la contraseña: solo el tamaño y la huella del archivo,
+# si la contraseña trae espacios o saltos de línea al inicio/final, y el motivo de keytool.
+name: diagnostico-android
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  revisar:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Revisar llave de Android
+        shell: bash
+        env:
+          KS_B64: ${{ secrets.VEXLY_ANDROID_KEYSTORE }}
+          KS_PASS: ${{ secrets.VEXLY_ANDROID_KEYSTORE_PASS }}
+        run: |
+          set -uo pipefail
+          echo "$KS_B64" | base64 -d > "$RUNNER_TEMP/ks.jks" && echo "base64: OK" || echo "base64: NO se pudo decodificar"
+          echo "archivo: $(stat -c %s "$RUNNER_TEMP/ks.jks") bytes, SHA256 $(sha256sum "$RUNNER_TEMP/ks.jks" | cut -c1-16)"
+          [[ "$KS_PASS" =~ ^[[:space:]] || "$KS_PASS" =~ [[:space:]]$ ]] && echo "contrasena: TIENE espacios o saltos al inicio/final" || echo "contrasena: sin espacios al inicio/final"
+          printf '%s' "$KS_PASS" | LC_ALL=C grep -q '[^ -~]' && echo "contrasena: tiene caracteres especiales fuera de ASCII" || echo "contrasena: solo ASCII"
+          if OUT=$(keytool -list -keystore "$RUNNER_TEMP/ks.jks" -storepass:env KS_PASS -alias vexlyremoto 2>&1); then
+            echo "RESULTADO: la llave ABRE bien"
+          else
+            echo "RESULTADO: no abre. Motivo:"; echo "$OUT" | grep -i "error" | head -3
+          fi
+          rm -f "$RUNNER_TEMP/ks.jks"
