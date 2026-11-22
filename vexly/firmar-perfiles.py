@@ -41,12 +41,12 @@ llave = SigningKey(semilla)
 publica = base64.b64encode(bytes(llave.verify_key)).decode()
 
 # 1) Llave pública dentro de la app
-codigo = open(COMMON, encoding="utf-8").read()
+codigo = open(COMMON, encoding="utf-8", newline="").read()  # conserva los saltos de línea
 encontrados = PATRON.findall(codigo)
 if len(encontrados) != 1:
     fallar(f"se esperaba 1 'const KEY' en src/common.rs y hay {len(encontrados)}")
 codigo = PATRON.sub(lambda m: m.group(1) + publica + m.group(3), codigo)
-open(COMMON, "w", encoding="utf-8").write(codigo)
+open(COMMON, "w", encoding="utf-8", newline="").write(codigo)
 print(f"llave pública de perfiles: {publica}")
 
 # 2) Perfiles firmados
@@ -59,5 +59,5 @@ for variante in ("cliente", "tecnico"):
     firmado = bytes(llave.sign(mensaje))  # 64 bytes de firma + mensaje (formato libsodium)
     VerifyKey(base64.b64decode(publica)).verify(firmado)  # comprobación
     destino = os.path.join(RAIZ, "canela", f"custom-{variante}.txt")
-    open(destino, "w", encoding="ascii").write(base64.b64encode(firmado).decode() + "\n")
+    open(destino, "w", encoding="ascii", newline="").write(base64.b64encode(firmado).decode() + "\n")
     print(f"✓ {destino} firmado")
