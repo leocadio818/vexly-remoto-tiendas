@@ -86,6 +86,13 @@ jobs:
           name: bridge-artifact
           path: ./
 
+      - name: Perfiles firmados con la llave propia de Vexly
+        env:
+          VEXLY_PERFIL_KEY: ${{ secrets.VEXLY_PERFIL_KEY }}
+        run: |
+          python3 -m pip install --quiet --break-system-packages pynacl
+          python3 vexly/firmar-perfiles.py
+
       - name: Build rustdesk lib
         run: cargo build --locked --features flutter,hwcodec --release --target aarch64-apple-ios --lib
 
@@ -99,6 +106,8 @@ jobs:
           P=flutter/ios/Runner/Info.plist
           plutil -replace CFBundleDisplayName -string "Vexly Remoto" "$P"
           plutil -replace CFBundleName -string "Vexly Remoto" "$P"
+          # El panel abre la app con vexlyremoto:// (nombre de la app en minúsculas)
+          /usr/libexec/PlistBuddy -c "Add :CFBundleURLTypes:0:CFBundleURLSchemes:1 string vexlyremoto" "$P"
           # La app trae cifrado propio (libsodium/rustls/openssl): el "false" de RustDesk no aplica,
           # y "true" exige un código de documentación. Sin la clave, Apple pregunta en App Store Connect.
           plutil -remove ITSAppUsesNonExemptEncryption "$P"
