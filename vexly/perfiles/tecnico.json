@@ -1,0 +1,30 @@
+{
+  "app-name": "VexlyRemoto",
+  "override-settings": {
+    "custom-rendezvous-server": "remoto.vexlyapp.com",
+    "relay-server": "remoto.vexlyapp.com",
+    "key": "bu3cI2m9aG1FgOAkqjZ2uTwn3Gp2zYZ1+L4SePug7n4=",
+    "api-server": "https://remoto.vexlyapp.com",
+    "allow-remote-config-modification": "N",
+    "enable-lan-discovery": "N",
+    "direct-server": "N",
+    "verification-method": "use-both-passwords",
+    "approve-mode": "password-click",
+    "allow-deep-link-password": "Y",
+    "enable-check-update": "N",
+    "allow-auto-update": "N",
+    "hide-server-settings": "Y",
+    "hide-network-settings": "Y",
+    "hide-proxy-settings": "Y",
+    "hide-websocket-settings": "Y",
+    "hide-powered-by-me": "Y",
+    "canela-variant": "tecnico",
+    "canela-ticket-pk": "LdIFxJZH2df9zP2NyqPioSIdqdK1IqfsL4YjQRW2Yqo="
+  },
+  "default-settings": {
+    "lang": "es",
+    "enable-audio": "Y",
+    "enable-clipboard": "Y",
+    "enable-file-transfer": "Y"
+  }
+}
