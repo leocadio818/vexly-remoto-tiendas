@@ -33,7 +33,7 @@ if not secreto:
 try:
     semilla = base64.b64decode(secreto, validate=True)
 except Exception:
-    fallar("VEXLY_PERFIL_KEY no es base64 válido")
+    fallar("VEXLY_PERFIL_KEY no es base64 valido")
 if len(semilla) != 32:
     fallar(f"VEXLY_PERFIL_KEY debe tener 32 bytes y tiene {len(semilla)}")
 
@@ -47,7 +47,7 @@ if len(encontrados) != 1:
     fallar(f"se esperaba 1 'const KEY' en src/common.rs y hay {len(encontrados)}")
 codigo = PATRON.sub(lambda m: m.group(1) + publica + m.group(3), codigo)
 open(COMMON, "w", encoding="utf-8", newline="").write(codigo)
-print(f"llave pública de perfiles: {publica}")
+print(f"llave publica de perfiles: {publica}")
 
 # 2) Perfiles firmados
 for variante in ("cliente", "tecnico"):
@@ -60,4 +60,4 @@ for variante in ("cliente", "tecnico"):
     VerifyKey(base64.b64decode(publica)).verify(firmado)  # comprobación
     destino = os.path.join(RAIZ, "canela", f"custom-{variante}.txt")
     open(destino, "w", encoding="ascii", newline="").write(base64.b64encode(firmado).decode() + "\n")
-    print(f"✓ {destino} firmado")
+    print(f"OK {destino} firmado")
