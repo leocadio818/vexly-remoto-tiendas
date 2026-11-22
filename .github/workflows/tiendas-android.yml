@@ -247,7 +247,12 @@ jobs:
           BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1); echo "build-tools: $BT"
           echo "$KS_B64" | base64 -d > "$RUNNER_TEMP/ks.jks"
           # Comprobación: la llave se abre con la contraseña (si no, se detiene sin publicar nada)
-          /usr/lib/jvm/java-17-openjdk-amd64/bin/keytool -list -keystore "$RUNNER_TEMP/ks.jks" -storepass:env KS_PASS -alias vexlyremoto > /dev/null || { echo "ERROR: la llave de Android no abre con esa contrasena o no tiene el alias vexlyremoto"; rm -f "$RUNNER_TEMP/ks.jks"; exit 1; }
+          # Datos para comparar con la PC (no revelan la llave): tamano y huella SHA256 del archivo
+          echo "archivo de la llave: $(stat -c %s "$RUNNER_TEMP/ks.jks") bytes, SHA256 $(sha256sum "$RUNNER_TEMP/ks.jks" | cut -c1-16)..."
+          if ! OUT=$(/usr/lib/jvm/java-17-openjdk-amd64/bin/keytool -list -keystore "$RUNNER_TEMP/ks.jks" -storepass:env KS_PASS -alias vexlyremoto 2>&1); then
+            echo "ERROR: la llave de Android no abre. Motivo de keytool:"; echo "$OUT" | grep -i "error" | head -3
+            rm -f "$RUNNER_TEMP/ks.jks"; exit 1
+          fi
           echo "OK llave de Android"
           mkdir -p out
           for variant in cliente tecnico; do
