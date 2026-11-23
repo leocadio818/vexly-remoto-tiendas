@@ -115,6 +115,9 @@ jobs:
       - name: Solo iPhone (sin iPad, Apple no pedira fotos de iPad)
         run: sed -i '' 's/TARGETED_DEVICE_FAMILY = "1,2";/TARGETED_DEVICE_FAMILY = 1;/' flutter/ios/Runner.xcodeproj/project.pbxproj
 
+      - name: Panel de teclas especiales (estilo Vexly)
+        run: python3 .github/patches/vexly-teclado.py
+
       - name: Compilar Flutter (sin firmar)
         run: |
           cd flutter
