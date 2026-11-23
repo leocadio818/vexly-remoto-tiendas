@@ -1,6 +1,6 @@
 # Vexly Remoto — instaladores de Windows 64 bits con la llave propia de perfiles.
 # Solo Windows x64 (no compila Mac, Linux ni Android, para no gastar minutos).
-# Sale a un prerelease "vexly-windows" de este repo:
+# Sale al prerelease "vexly" de este repo (el que lee el panel en Descargas):
 #   vexlyremoto-<versión>.<build>-x86_64.exe          (cliente)
 #   vexlyremoto-tecnico-<versión>.<build>-x86_64.exe  (técnico)
 #   vexlyremoto-<versión>.<build>-x86_64.msi          (cliente, msi)
@@ -21,7 +21,7 @@ env:
   VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"
   VCPKG_COMMIT_ID: "120deac3062162151622ca4860575a33844ba10b"
   VERSION: "1.4.9"
-  TAG_NAME: "vexly-windows"
+  TAG_NAME: "vexly"
 
 jobs:
   bridge:
@@ -210,13 +210,20 @@ jobs:
           mv $msi.FullName ../../SignOutput/vexlyremoto-${{ env.VERSION }}.${{ env.CANELA_BUILD }}-x86_64.msi
           popd
 
+      - name: canela-build.json (numero de version para el boton Actualizar)
+        shell: bash
+        run: |
+          printf '{"build":%s,"version":"%s","sha":"%s","published_at":"%s"}\n' \
+            "${{ env.CANELA_BUILD }}" "${{ env.VERSION }}" "${{ github.sha }}" "$(date -u +%FT%TZ)" > ./SignOutput/canela-build.json
+          cat ./SignOutput/canela-build.json
+
       - name: Guardar como artifact del run
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: vexlyremoto-windows
           path: ./SignOutput/vexlyremoto*
 
-      - name: Publicar en el prerelease vexly-windows
+      - name: Publicar en el prerelease vexly
         uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844 # v1
         with:
           prerelease: true
@@ -224,3 +231,15 @@ jobs:
           files: |
             ./SignOutput/vexlyremoto*.exe
             ./SignOutput/vexlyremoto*.msi
+            ./SignOutput/canela-build.json
+
+      - name: Borrar instaladores de Windows de builds anteriores
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # quedan solo los .exe/.msi de este build; los APK de Android no se tocan
+          gh release view "${{ env.TAG_NAME }}" -R "${{ github.repository }}" --json assets --jq '.assets[].name' \
+            | grep -E '^vexlyremoto.*\.(exe|msi)$' | grep -v "\.${{ env.CANELA_BUILD }}-" | while read -r a; do
+                echo "borrando $a"; gh release delete-asset "${{ env.TAG_NAME }}" "$a" -R "${{ github.repository }}" -y
+              done || true
