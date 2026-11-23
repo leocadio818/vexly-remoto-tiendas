@@ -1,7 +1,7 @@
 # Vexly Remoto — APK de Android (cliente y técnico) con la llave propia de perfiles
 # y firmados con la keystore de Brightway (secretos VEXLY_ANDROID_KEYSTORE / _PASS).
 # Una sola APK "universal" por versión (sirve en celulares, tablets y cajas Android).
-# Sale al prerelease "vexly-android" de este repo:
+# Sale al prerelease "vexly" de este repo (el que lee el panel en Descargas):
 #   vexlyremoto-<versión>.<build>-universal.apk          (cliente)
 #   vexlyremoto-tecnico-<versión>.<build>-universal.apk  (técnico)
 name: tiendas-android
@@ -20,7 +20,7 @@ env:
   VCPKG_COMMIT_ID: "120deac3062162151622ca4860575a33844ba10b"
   VERSION: "1.4.9"
   NDK_VERSION: "r28c"
-  TAG_NAME: "vexly-android"
+  TAG_NAME: "vexly"
 
 jobs:
   bridge:
@@ -277,9 +277,20 @@ jobs:
           name: vexlyremoto-android
           path: out/vexlyremoto*.apk
 
-      - name: Publicar en el prerelease vexly-android
+      - name: Publicar en el prerelease vexly
         uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844 # v1
         with:
           prerelease: true
           tag_name: ${{ env.TAG_NAME }}
           files: out/vexlyremoto*.apk
+
+      - name: Borrar APK de builds anteriores
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # quedan solo los APK de este build; los instaladores de Windows no se tocan
+          gh release view "${{ env.TAG_NAME }}" -R "${{ github.repository }}" --json assets --jq '.assets[].name' \
+            | grep -E '^vexlyremoto.*\.apk$' | grep -v "\.${{ github.run_number }}-" | while read -r a; do
+                echo "borrando $a"; gh release delete-asset "${{ env.TAG_NAME }}" "$a" -R "${{ github.repository }}" -y
+              done || true
