@@ -112,6 +112,9 @@ jobs:
           # y "true" exige un código de documentación. Sin la clave, Apple pregunta en App Store Connect.
           plutil -remove ITSAppUsesNonExemptEncryption "$P"
 
+      - name: Solo iPhone (sin iPad, Apple no pedira fotos de iPad)
+        run: sed -i '' 's/TARGETED_DEVICE_FAMILY = "1,2";/TARGETED_DEVICE_FAMILY = 1;/' flutter/ios/Runner.xcodeproj/project.pbxproj
+
       - name: Compilar Flutter (sin firmar)
         run: |
           cd flutter
