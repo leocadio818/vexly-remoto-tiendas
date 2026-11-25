@@ -28,6 +28,7 @@ s = s[:ini] + r"""class KeyHelpTools extends StatefulWidget {
 // Vexly: panel de teclas especiales en cuadricula, con colores por grupo.
 class _KeyHelpToolsState extends State<KeyHelpTools> {
   var _panel = false;
+  double? _lastH;
   final _key = GlobalKey();
 
   static const _gris = [Color(0xFF2A2E37), Color(0xFF3A3F4B), Color(0xFFE8EAF0)];
@@ -49,7 +50,11 @@ class _KeyHelpToolsState extends State<KeyHelpTools> {
   }
 
   Widget tecla(String text, List<Color> c, void Function() onPressed,
-      {bool active = false, IconData? icon, double h = 44, int flex = 1}) {
+      {bool active = false,
+      IconData? icon,
+      double h = 44,
+      int flex = 1,
+      void Function()? onLongPress}) {
     final col = active ? _act : c;
     return Expanded(
         flex: flex,
@@ -78,11 +83,18 @@ class _KeyHelpToolsState extends State<KeyHelpTools> {
                                       style: TextStyle(
                                           color: col[2], fontSize: 13)),
                               ])
-                        : Text(text,
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                                color: col[2], fontSize: 12, height: 1.1)),
-                    onPressed: onPressed))));
+                        : FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 3),
+                                child: Text(text,
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                        color: col[2],
+                                        fontSize: 12,
+                                        height: 1.1)))),
+                    onPressed: onPressed,
+                    onLongPress: onLongPress))));
   }
 
   Widget empty() => Expanded(child: SizedBox());
@@ -116,9 +128,14 @@ class _KeyHelpToolsState extends State<KeyHelpTools> {
     if (renderObject is RenderBox) {
       final size = renderObject.size;
       Offset pos = renderObject.localToGlobal(Offset.zero);
+      // Vexly: con el panel abierto la pantalla remota tambien se acomoda arriba.
+      final visible = widget.keyboardIsVisible || _panel;
       gFFI.cursorModel.keyHelpToolsVisibilityChanged(
-          Rect.fromLTWH(pos.dx, pos.dy, size.width, size.height),
-          widget.keyboardIsVisible);
+          Rect.fromLTWH(pos.dx, pos.dy, size.width, size.height), visible);
+      if (visible && _lastH != size.height) {
+        _lastH = size.height;
+        gFFI.canvasModel.mobileFocusCanvasCursor();
+      }
     }
   }
 
@@ -130,6 +147,7 @@ class _KeyHelpToolsState extends State<KeyHelpTools> {
         inputModel.command;
 
     if (!_panel && !hasModifierOn && !widget.requestShow) {
+      _lastH = null;
       gFFI.cursorModel
           .keyHelpToolsVisibilityChanged(null, widget.keyboardIsVisible);
       return Offstage();
@@ -157,9 +175,20 @@ class _KeyHelpToolsState extends State<KeyHelpTools> {
         ? tecla('Cmd', _gris, () {
             setState(() => inputModel.command = !inputModel.command);
           }, active: inputModel.command, h: h)
+        // Vexly: tocar = abre el menu Inicio; dejar pulsado = Win queda
+        // presionada (azul) para atajos como Win+R o Win+E.
         : tecla('', _gris, () {
-            setState(() => inputModel.command = !inputModel.command);
-          }, active: inputModel.command, icon: Icons.window, h: h);
+            if (inputModel.command) {
+              setState(() => inputModel.command = false);
+            } else {
+              k('Meta');
+            }
+          },
+            active: inputModel.command,
+            icon: Icons.window,
+            h: h,
+            onLongPress: () =>
+                setState(() => inputModel.command = !inputModel.command));
 
     final top = Row(children: [
       chip(_panel ? 'ABC teclado' : 'Teclas especiales', false, () {
@@ -267,4 +296,19 @@ s = s.replace(viejo, """            KeyHelpTools(
                 showGestureHelp: _showGestureHelp,
                 openKeyboard: openKeyboard),""")
 open(p, "w", encoding="utf-8").write(s)
+
+# El panel va abajo (encima del teclado), no arriba: la pantalla remota
+# se achica por la altura del panel y ya no se corre hacia abajo.
+m = "flutter/lib/models/model.dart"
+t = open(m, encoding="utf-8").read()
+a = """          (parent.target?.cursorModel.keyHelpToolsRectToAdjustCanvas?.bottom ??
+              0);"""
+b = """    final bottom =
+        parent.target?.cursorModel.keyHelpToolsRectToAdjustCanvas?.bottom ?? 0;
+    return max(bottom - MediaQueryData.fromView(ui.window).padding.top, 0);"""
+assert t.count(a) == 1 and t.count(b) == 1, "model.dart cambio; revisar el panel de teclas"
+t = t.replace(a, """          (parent.target?.cursorModel.keyHelpToolsRectToAdjustCanvas?.height ??
+              0);""")
+t = t.replace(b, """    return 0.0;""")
+open(m, "w", encoding="utf-8").write(t)
 print("Panel de teclas aplicado")
