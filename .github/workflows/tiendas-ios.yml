@@ -118,6 +118,9 @@ jobs:
       - name: Panel de teclas especiales (estilo Vexly)
         run: python3 .github/patches/vexly-teclado.py
 
+      - name: Manifiestos de privacidad (Apple ITMS-91061)
+        run: python3 .github/patches/vexly-privacidad.py
+
       - name: Compilar Flutter (sin firmar)
         run: |
           cd flutter
