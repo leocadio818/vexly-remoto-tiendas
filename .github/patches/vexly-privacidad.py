@@ -32,4 +32,12 @@ open(m, "w", encoding="utf-8").write(t)
 # El Podfile.lock tiene fijada la version vieja (4.3.4) y choca con lo de arriba:
 # se borra para que CocoaPods vuelva a elegir versiones al compilar.
 os.remove("flutter/ios/Podfile.lock")
+
+# sqflite nuevo trae la parte de iOS en "sqflite_darwin": el proyecto de Xcode
+# tiene escrito el nombre viejo para enlazar y el build falla sin este cambio.
+x = "flutter/ios/Runner.xcodeproj/project.pbxproj"
+u = open(x, encoding="utf-8").read()
+assert u.count('"\\"sqflite\\""') == 3, "project.pbxproj cambio; revisar sqflite"
+u = u.replace('"\\"sqflite\\""', '"\\"sqflite_darwin\\""')
+open(x, "w", encoding="utf-8").write(u)
 print("Manifiestos de privacidad: librerias actualizadas")
