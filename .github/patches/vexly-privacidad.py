@@ -1,6 +1,7 @@
 # Vexly: Apple (ITMS-91061) pide "privacy manifest" en 7 librerias.
 # Se suben a las primeras versiones que lo traen. Se aplica al compilar
 # (tiendas-ios.yml); no se guarda en el codigo de Canela.
+import os
 import re
 import subprocess
 
@@ -28,4 +29,7 @@ t = t.replace(a, a + """  pod 'DKImagePickerController/PhotoGallery', '>= 4.3.9'
   pod 'SwiftyGif', '>= 5.4.5'
 """)
 open(m, "w", encoding="utf-8").write(t)
+# El Podfile.lock tiene fijada la version vieja (4.3.4) y choca con lo de arriba:
+# se borra para que CocoaPods vuelva a elegir versiones al compilar.
+os.remove("flutter/ios/Podfile.lock")
 print("Manifiestos de privacidad: librerias actualizadas")
